@@ -1,0 +1,137 @@
+\documentclass{article}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{booktabs}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{gensymb}
+\usepackage{pdfpages}
+\usepackage{mparhack}
+
+
+\usepackage[bitstream-charter]{mathdesign}
+\let\circledS\undefined
+%% Sets page size and margins
+\usepackage[a4paper,top=2cm,bottom=2cm,left=1cm,right=7cm,marginparwidth=5cm, marginparsep=1cm]{geometry}
+
+\newtheorem{theorem}{Theorem}[section]
+\newtheorem{corollary}{Corollary}[theorem]
+\newtheorem{lemma}[theorem]{Lemma}
+\newtheorem{definition}{Definition}[section]
+\newtheorem{principle}{Principle}[section]
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage[makeroom]{cancel}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage[final]{matlab-prettifier}
+\usepackage{courier}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[]{appendix}
+\usepackage{wrapfig}
+\usepackage[final]{matlab-prettifier}
+\usepackage[final]{mathtools}
+
+\renewcommand\labelitemi{$\bullet$}
+
+\definecolor{codecol}{rgb}{0.94, 0.94, 0.94}
+\definecolor{dgreen}{rgb}{0.1, 0.49, 0.1}
+
+\newcommand{\ea}{\nonumber \\}
+\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
+\lstset{framextopmargin=50pt,frame=bottomline}
+
+\newcommand{\norm}[2]{\left\Vert#1\right\Vert_{#2}}
+\newcommand{\question}[1]{{\color{red}\textbf{Question: }\emph{#1}}}
+\newcommand{\action}[1]{{\color{blue}\textbf{Action: }\emph{#1}}}
+\newcommand{\epdp}{$(\epsilon, \delta)$-DP}
+\newcommand{\alg}{$\mathcal{A}$}
+\newcommand{\data}{$\mathcal{D}$}
+\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
+\newcommand{\normaldist}[2]{$\mathcal{N}(#1, #2)$}
+\newcommand{\expt}[2]{\mathbb{E}_{#2}[#1]}
+\newcommand{\prob}[2]{\mathbb{P}_{#2}[#1]}
+\newcommand{\model}[1]{\mathcal{M}_{#1}}
+\newcommand{\indep}{\raisebox{0.05em}{\rotatebox[origin=c]{90}{$\models$}}}
+\newcommand{\mset}[3]{\lbrace {#1}_{#2} \rbrace_{#2=1}^{#3} }
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\newcommand{\ix}[1]{%
+  \leavevmode % if at the start of a paragraph
+  \marginpar{\small\emph{#1}}% the note
+}
+
+\newcommand{\qx}[1]{%
+	\leavevmode % if at the start of a paragraph
+	\marginpar{\color{blue}\small\emph{#1}}% the note
+}
+\newcommand{\marfig}[2]{
+  \marginpar{ \includegraphics[width=\marginparwidth]{#1} \centering \text{\small #2} }
+}
+
+\DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
+
+\title{\textbf{Reinforcement Learning: An Introduction}\\
+\textit{Summary Notes}
+}
+\author{Mrinank Sharma}
+
+\begin{document}
+\maketitle
+
+\section{Introduction}
+Other\ix{Elements of Reinforcement Learning} than the \textbf{agent} and the \textbf{environment}, there are four main subelements of an RL system:
+\begin{enumerate}
+	\item The \emph{policy} maps perceived states of the environment to actions. This could be a lookup table or a search process. 
+	\item The \emph{reward signal} defines the goal of a reinforement learning problem. The environment sends rewards to an agent that has the sole objective of maximising this reward. 
+	\item The \emph{value function} specifies what is good in the long run. The \emph{value} of a state is the total amount of reward an agent can expect to accumulate over teh future starting from that state. 
+	\item Some RL systems have \emph{models} of the environment that can mimic the behaviour of the environment. Models are used for planning. 
+\end{enumerate}
+Whilst\ix{Rewards and Value Functions} rewards determine the immediate, intrisic desirability of environmental states, values indicate  the long-term desirability of states after taking into account which states are likely to follow. We choose actions based on values, even though values are derived from rewards.  
+
+It\ix{Evolutionary Methods} is possible to learn policies without estimating value functions by using evolutionary methods. However, they tend to ignore much of the useful structure and are not well suited for RL tasks as they ignore relevant information, such as the states which are passed and the actions which are selected. 
+
+\section{Multi-armed Bandits}
+\begin{quote}
+	\emph{The most important feature distinguishing reinforcement learning from other types of learning is that it uses training information that \textbf{evaluates} the actions taken rather than \textbf{instructs} by giving correct actions.}
+\end{quote}
+This form of feedback creates the need for active exploration. 
+
+\begin{definition}[$k$-armed Bandit]
+	\ix{$k$-armed bandits}In the $k$-armed bandit problem, you are repeatedly faced with a choice among $k$ different actions. After each choice, a numerical reward is received from a \textbf{stationary} probability distribution associated with the selected action. The objective is to maximise the expected total reward over some time period. 
+\end{definition}
+The \ix{Value}value of action $a$ is the expected reward given $a$ was chosen:
+\begin{align}
+q_*(a) = \mathbb{E}[R_t |\ A_t = a].
+\end{align}
+If we knew the values, problem solved - just pick the action with the maximum value. However, we do not know these. Denote the \emph{estimated} value as $Q_t(a)$. A simple way to estimate the action-value is a \emph{sample average}, which can be calculated incrementally. 
+
+Note\ix{Reward Variance} that purely greedy methods are best if there is no noise in the reward signal. With $\epsilon$-greedy algorithms, the best value of $\epsilon$ will depend on the amount of noise, which determines the number of samples for the sample average to converge. However, if the problem is \emph{non-stationary}, we still need to explore.  
+
+If\ix{Non-stationary Problems} the bandit is non-stationary, we might use the following rule for value estimates:
+\begin{align}
+Q_{n+1}(a) = Q_{n}(a) + \alpha_n(a)\ \big[ R_n - Q_n(a)\big].
+\end{align}
+It\ix{Convergence Guarantees} is known that convergence with probability $1$ happens if the following conditions hold:
+\begin{align}
+	\sum_{n=1}^{\infty} \alpha_n(a) = \infty \text{,  and } \sum_{n=1}^{\infty} \alpha_n(a)^2 < \infty.
+\end{align}
+The first condition ensures the steps are sufficiently large to overcome an initial condition and the second condition ensures that the steps become small enough to give convergence. However, step sizes which meet this conditions are rarely used in applications because they seem to converge slowly or require considerable tuning. 
+
+With this techniques, the initialisation effectively becomes an additional parameter which needs to be chosen. They can be used to provide prior knowledge and can encourage exploration, for example, by being optimistic. However, this sort of exploration is not useful for non-stationary problems (the task changes creates a renewed need for exploration). 
+
+
+\end{document}

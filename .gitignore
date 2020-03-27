@@ -1,0 +1,6 @@
+*.DS_store
+*.aux
+*.log
+*.synctex.gz
+*.out
+*.ipynb_checkpoints*

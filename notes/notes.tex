@@ -133,5 +133,14 @@ The first condition ensures the steps are sufficiently large to overcome an init
 
 With this techniques, the initialisation effectively becomes an additional parameter which needs to be chosen. They can be used to provide prior knowledge and can encourage exploration, for example, by being optimistic. However, this sort of exploration is not useful for non-stationary problems (the task changes creates a renewed need for exploration). 
 
+The\ix{UCB} intuition behind UCB is that its better, when exploring, to select among the non-greedy actions which have the \emph{potential} for being optimal. To do this, we maximise an estimate of the arm's value summed with some sort of uncertainty estimate. UCB often performs well but can be difficult to extent to RL from bandits. 
+
+We don't have to use value based methods. Instead, we could directly learn a preference over the actions and modify our preferences to give us higher rewards e.g., increasing our preference for an action if selecting it lead to a better outcome than expected. 
+
+\begin{definition}[Contextual Bandits]
+	In\ix{Contextual Bandits} a contextual bandit, the agent is faced with a series of multi-armed bandit problems, each associated with some information i.e., the agent has information about which bandit problem is being faced at any timestep. 
+\end{definition}
+Contextual bandits are intermediate between multi-armed bandits and the full RL problem; they involve learning a policy (i.e., a mapping from state information to actions) but similar to $k$-armed bandits, \textbf{the action selected influences only the immediate reward and not the next situation}. If we drop this constraint, we have the full RL problem. 
+
 
 \end{document}

@@ -1,0 +1,119 @@
+\documentclass{article}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{booktabs}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{gensymb}
+\usepackage{pdfpages}
+\usepackage{mparhack}
+
+
+\usepackage[bitstream-charter]{mathdesign}
+\let\circledS\undefined
+%% Sets page size and margins
+\usepackage[a4paper,top=2cm,bottom=2cm,left=1cm,right=1cm, marginparsep=1cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage[makeroom]{cancel}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage[final]{matlab-prettifier}
+\usepackage{courier}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[]{appendix}
+\usepackage{wrapfig}
+\usepackage[final]{matlab-prettifier}
+\usepackage[final]{mathtools}
+
+\renewcommand\labelitemi{$\bullet$}
+
+\definecolor{codecol}{rgb}{0.94, 0.94, 0.94}
+\definecolor{dgreen}{rgb}{0.1, 0.49, 0.1}
+
+\newcommand{\ea}{\nonumber \\}
+\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
+\lstset{framextopmargin=50pt,frame=bottomline}
+
+\newcommand{\norm}[2]{\left\Vert#1\right\Vert_{#2}}
+\newcommand{\question}[1]{{\color{red}\textbf{Question: }\emph{#1}}}
+\newcommand{\action}[1]{{\color{blue}\textbf{Action: }\emph{#1}}}
+\newcommand{\epdp}{$(\epsilon, \delta)$-DP}
+\newcommand{\alg}{$\mathcal{A}$}
+\newcommand{\data}{$\mathcal{D}$}
+\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
+\newcommand{\normaldist}[2]{$\mathcal{N}(#1, #2)$}
+\newcommand{\expt}[2]{\mathbb{E}_{#2}[#1]}
+\newcommand{\prob}[2]{\mathbb{P}_{#2}[#1]}
+\newcommand{\model}[1]{\mathcal{M}_{#1}}
+\newcommand{\indep}{\raisebox{0.05em}{\rotatebox[origin=c]{90}{$\models$}}}
+\newcommand{\mset}[3]{\lbrace {#1}_{#2} \rbrace_{#2=1}^{#3} }
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\newcommand{\ix}[1]{%
+  \leavevmode % if at the start of a paragraph
+  \marginpar{\small\emph{#1}}% the note
+}
+
+\newcommand{\qx}[1]{%
+	\leavevmode % if at the start of a paragraph
+	\marginpar{\color{blue}\small\emph{#1}}% the note
+}
+\newcommand{\marfig}[2]{
+  \marginpar{ \includegraphics[width=\marginparwidth]{#1} \centering \text{\small #2} }
+}
+
+\newcommand{\myq}[1]{%
+	\vspace{1em}
+	\noindent\underline{\emph{Exercise #1}}\vspace{0.25em}\linebreak
+}
+
+\DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
+
+\title{\textbf{Reinforcement Learning: An Introduction}\\
+\textit{Solutions: Chapter 1}
+}
+\author{Mrinank Sharma}
+
+\begin{document}
+\maketitle
+\noindent\underline{\emph{Exercise 1.1: Self-Play}}\vspace{0.25em}\linebreak
+Since the RL algorithm is now playing against itself, the opponent is changing. The optimal strategy ought to be stable - if both players are playing optimally, they have no incentive to change their moves, so if the algorithm reachs this stage, it ought to be stable. However, there is no guarantee that this is reached. Perhaps the policy that the agent learns could form loops and never converge. 
+
+\myq{1.2: Symmetries}
+The learning process proposed in the book uses value functions for each state. If certain positions are effectively identical, we should treat their value as being the same (with value functions, we can simply label the states are being equivalent). This should make the learning process faster i.e., we need fewer iterations (or sample games) to learn the correct value functions. 
+
+However, states are only effectively identical if the opponent treats them as such. If the opponent does not realise the symmetry between states and thus takes non-corresponding actions in these states, our RL agent should try to take advantage of this. In this setting, these symmetric positions do not have the same value because the opponent players differently in these states. 
+
+\myq{1.3: Greedy Play}
+Recall that in the algorithm suggested by the book, we initialise the value functions for all of the states and then perform some sort of $\epsilon$-greedy policy. If the player is \emph{purely greedy} i.e., never takes any exploratory actions, there is no guarantee that the values for all states would eventually reach the `correct' numbers, being that the play will be worse (or in the best case the same depending on the environment and initialisation). 
+
+If we magically already knew that correct values for each of the states, there would be no problem. 
+
+\myq{1.4: Learning from Exploration}
+In the case where we update after all moves, even after exploratory moves, we would converge to the values \emph{under the} $\epsilon$-greedy \emph{policy} i.e., probability of winning assuming that we are mostly greedy and sometimes exploratory. 
+
+In the case given, we converge to the probability of winning assuming that we always take the best move. 
+
+If we care about wins during the training phase, we'll want to learn the probability of winning assuming the exploratory policy as there could be moves which are identical under optimal play but different under sub-optimal play. But it seems that we wouldn't deploy with this exploratory policy, and we might not care about performance during the learning phase, so its better to learn the optimal win probabilities. 
+
+\myq{1.5: Other Improvemenst}
+At the moment, the exploration policy is purely random. We could instead use a smarter exploration policy, such as choosing to explore the trajectories through the game tree which we haven't seen before (or using some UCB or similar policy instead). 
+
+We could also initialise our value functions better by using our knowledge of Tic-tac-toe i.e., we know there will be board moves with low probabilities of winning and those with high probabilities of winning. Initialising these better should also speed up training. 
+
+
+\end{document}

@@ -109,6 +109,7 @@ Some issues with MDPs could be that:
 	\item \textbf{Non-Stationary Dynamics}. It's assumed that the $p$ function remains the same (as far as I can tell). However, it could change over time, for example, humans reward functions change over a course of a lifetime.
 	\item \textbf{Can we formulate all behaviour we want as reward maximisation?} Not sure I agree with this point (VNM Rationality). Some people satisfice, but I suppose that means the reward function we have down is wrong. If they are rational, they should be maximising something. 
 	\item \textbf{Self-Direction}. In real life, people have internal rewards i.e., they choose what to pursure. Indeed, life is not entirely directed as people have a lot of freedom. In the MDP, we've assumed that this reward function is entirely external. 
+	\item \textbf{Multiple Agents}. This is linked to non-stationarity, but many situations have multiple agents. We need game theoretical tools here most likely. Probably can be modelled as a changing environment. 
 \end{itemize}
 
 \myq{3.3: Drawing the Line}
@@ -213,6 +214,98 @@ In this case, it will make a difference. Consider an episodic task with a reward
 
 The different in episodic tasks is that we don't know how long the episode was going to last. If the episode was a fixed length, this problem would go away and it wouldn't make a difference (we can see this by imagining the above sum - we would add constant to each of the value functions.)
 
+\myq{3.17: Bellman for Action-Value Functions}
+\begin{align}
+q\pi(s, a) &\triangleq \mathbb{E}_\pi [G_t | S_t = s, A_t = a] \nonumber \\
+&= \mathbb{E}_\pi[R_{t+1} + \gamma G_{t+1} | S_t = s, A_t = a] \nonumber \\
+&= \sum_{r \altmathcal{R}} p(s', r | s, a) [r + \gamma G_{t+1}] \nonumber \\
+&= \sum_{r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma \sum_{a' \in \altmathcal{A}(s')} q_\pi(s', a')],
+\end{align}
+which matches the backup diagram provided in the book. 
+
+\myq{3.18: Value Functions and Action-Value Functions}
+\begin{align}
+v_\pi(s) &= \mathbb{E}_\pi(q_\pi(s, a)) \nonumber \\ 
+&= \sum_{a \in \altmathcal{A}(s)} \pi(a | s) q_\pi(s, a)
+\end{align}
+
+\myq{3.19: Value Functions and Action-Value Functions}
+\begin{align}
+q_\pi(s, a) &= \mathbb{E}_\pi(G_t | S_t = a, A_t = a) \nonumber \\
+& = \mathbb{E}_\pi(R_{t+1} + \gamma G_{t+1} | S_t = a, A_t = a) \nonumber \\
+&= \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma v_\pi(s')] \nonumber \\
+&= \mathbb{E}_p [R_{t+1} + \gamma v_\pi(S_{t+1}) | S_t = a, A_t = a]
+\end{align}
+
+\myq{3.20: Golf-Example}
+The optimal value function is a merge between the function for putting and the function using the driver. It has the same contours as the driver outside the green. On the green, it has the contours from the putter (or the entire green has value $-1$). 
+
+\myq{3.21: Golf Part 2}
+This looks the exact same as the value function for putting. 
+
+\myq{3.22: Discounting}
+With $\gamma=0$, we only care about the reward one step ahead, so always so left. 
+
+With $\gamma=0.5$, the value for going left is $1$ and the value for going right is $2 \cdot 0.5 = 1$ so choose artibarily between the two. 
+
+With $\gamma=0.9$, the value for going right is $2*0.9 > 1$, so always go right. 
+
+\myq{3.23: Robot Returns}
+\begin{align}
+q_*(h, w) &= r_{\texttt{wait}} + \gamma \max_a q_*(h, a) \\
+q_*(h, s) &= \alpha [r_{\texttt{search}} + \gamma \max_a q_*(h, a)] + (1-\alpha)[r_{\texttt{search}} + \gamma \max_a q_*(l, a)] \\
+q_*(l, s) &= \beta[r_{\texttt{search}} + \gamma \max_a q_*(l, a)] + (1-\beta)[-3 + \gamma \max_a q_*(h, a)]\\
+q_*(l, r) &=  \gamma \max_a q_*(h, a)\\
+q_*(l, w) &= r_{\texttt{wait}} + \gamma \max_a q_*(l, a)
+\end{align}
+these can be solved in principle, but it isn't that nice with those maxima. 
+
+\myq{3.24: Gridworld}
+We first find $\gamma$. 
+\begin{align}
+v_*(A') = 0 + \gamma v_*(\text{box above A'}) \Rightarrow \gamma = 0.9
+\end{align}
+Now,
+\begin{align}
+v_*(A) = R_{AA'} + \gamma v_*(A') = 24.4
+\end{align}
+
+\myq{3.25 - 3.28: Bellman Optimality}
+\begin{align}
+v_*(s) = \max_{a\in \altmathcal{A}(s)} q_*(s, a).
+\end{align}
+
+\begin{align}
+q_*(s, a) = \sum_{s', r'} p(s', r | s, a) [r + \gamma v_*(s')].
+\end{align}
+
+\begin{align}
+\pi_*(a | s) = \arg \max_a q_*(s, a),
+\end{align}
+where ties are broken arbitarily. 
+
+\begin{align}
+\pi_*(a | s) = \arg \max_a  \sum_{s', r'} p(s', r | s, a) [r + \gamma v_*(s')],
+\end{align}
+directly lifted from a previous solution. 
+
+\myq{3.29: Rewriting Recursions}
+\begin{align}
+v_\pi(s) = \sum_{a\in \altmathcal{A}(s)} \pi(a|s) [r(s, a) + \gamma \sum_{s' \in \altmathcal{S}} p(s' | a, s) v_\pi(s')]
+\end{align}
+
+\begin{align}
+v_*(s) = \max_{a\in \altmathcal{A}(s)} r(s, a) + \gamma \sum_{s' \in \altmathcal{S}} p(s' | a, s) v_*(s')
+\end{align}
+
+\begin{align}
+q_\pi(s, a) = r(s, a) + \gamma \sum_{s' \in \altmathcal{S}} p(s' | a, s) \sum_{a' \in \altmathcal{A}(s')} \pi(a | s) q_\pi(s', a')
+\end{align}
+
+\begin{align}
+q_*(s, a) = r(s, a) + \gamma \sum_{s' \in \altmathcal{S}} p(s' | s, a) \max_{a'\in \altmathcal{A}(s')} q_*(s', a')
+\end{align}
+A slightly different formulation, though I think I prefer the versions with full state dynamics. 
 
 
 \end{document}

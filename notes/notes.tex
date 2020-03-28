@@ -149,7 +149,7 @@ Contextual bandits are intermediate between multi-armed bandits and the full RL 
 \section{Finite Markov Decision Processes}
 \begin{definition}[Finite Markov Decision Process (MDP)]
 	A\ix{MDP} finite Markov Decision Process (MDP) is made up of:
-	\begin{itemize}
+	\begin{itemize}[noitemsep]
 		\item A sequence of discrete time steps, $t = 0, 1, 2, \ldots$.
 		\item A discrete set of states, $S_t \in \altmathcal{S}$.
 		\item A set of actions which the agent can take, $A_t \in \altmathcal{A}(S_t)$.
@@ -213,5 +213,33 @@ allowing for $T=\infty$ and $\gamma=1$. \comment{The book says not both - but I 
 	\end{align}
 \end{definition}
 Value functions satisfy recursive relationships. 
+
+A\ix{Optimal Policies} policy, $\pi$, is better than policy $\pi'$ iff $v_\pi(s) \geq v_{\pi'}(s) \forall s \in \altmathcal{S}$ with a strict inequality for at least one state. Optimal policies are better than or equal to all other policies. There may be multiple optimal policies, but they all share the same state-value function, 
+\begin{align}
+v_*(s) = \max_\pi v_\pi(s), \text{ for all } s \in \altmathcal{S}. 
+\end{align}
+The optimal action-value function is define analogously. 
+
+\ix{Bellman Optimality Equality}The Bellman optimality equation for the value function is:
+\begin{align}
+v_*(s) = \max_{a \in \altmathcal{A}(s)} \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma v_*(s')],
+\end{align}
+which expresses the intuition that the optimal value of a state is equal to the expected return of the best action from that state. Similarly, for the action-value function, 
+\begin{align}
+q_*(s, a) = \sum_{s', r} p(s', r | s, a) [r + \gamma \max_{a' \in \altmathcal{A}(s')} q_*(s', a')].
+\end{align}
+For a finite MDP, the Bellman optimality equations give a system of equations which can be solved for $v_*(s)$. Once we have the optimal value functions, it is easy to determine an optimal policy by acting greedily (or performing a one-step search).  \textbf{If you use $v_*$ to select actions in the short-term, the greedy policy is optimal in the long term since this value function takes into account reward consequences.} The optimal expected long-term return is locally and immediately available for each state so a one-step lookahead search yields optimal actions. 
+
+Note that the action-value function effectively caches the results of all of the one-step lookahead searches. This function can be maximised (with respect to the action) to find the optimal policy. 
+
+This all sounds great. However, we run into the following problems:\ix{Caveats}
+\begin{itemize}[noitemsep]
+	\item We need to accurately know the dynamics of the environment.
+	\item We need to have enough computational resources.
+	\item The Markov property needs to hold. 
+\end{itemize}
+
+
+
 
 \end{document}

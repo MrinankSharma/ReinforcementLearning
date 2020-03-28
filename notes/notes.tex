@@ -82,6 +82,10 @@
   \marginpar{ \includegraphics[width=\marginparwidth]{#1} \centering \text{\small #2} }
 }
 
+\newcommand{\comment}[1]{
+	\textcolor{red}{\textbf{#1}}
+}
+
 \DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
 
 \title{\textbf{Reinforcement Learning: An Introduction}\\
@@ -142,5 +146,72 @@ We don't have to use value based methods. Instead, we could directly learn a pre
 \end{definition}
 Contextual bandits are intermediate between multi-armed bandits and the full RL problem; they involve learning a policy (i.e., a mapping from state information to actions) but similar to $k$-armed bandits, \textbf{the action selected influences only the immediate reward and not the next situation}. If we drop this constraint, we have the full RL problem. 
 
+\section{Finite Markov Decision Processes}
+\begin{definition}[Finite Markov Decision Process (MDP)]
+	A\ix{MDP} finite Markov Decision Process (MDP) is made up of:
+	\begin{itemize}
+		\item A sequence of discrete time steps, $t = 0, 1, 2, \ldots$.
+		\item A discrete set of states, $S_t \in \altmathcal{S}$.
+		\item A set of actions which the agent can take, $A_t \in \altmathcal{A}(S_t)$.
+		\item A finite set of numerical rewards, $R_t \in \altmathcal{R} \subset \mathbb{R}$.
+	In this case, there is a well defined discrete transition distribution:
+	\begin{align}
+	p(s', r | s, a) \triangleq \text{Pr}[S_t = s', R_t =r| S_{t-1}=s, A_{t-1}=a],
+	\end{align}
+	which defines the \textbf{dynamics} of the MDP. 
+	\end{itemize}
+\end{definition}
+Note the Markov assumption; probabilities over the next state and reward depend only on the current state and action.\ix{Interpreting the Markov Assumption} This can be interpreted as a restriction on the state - the state must include information about all aspects of the past agent-environment interaction which will affect the future. 
+
+Given $p$, we can compute the following functions of interest:
+\begin{align}
+p(s'|s, a) \triangleq \text{Pr}[S_t = s' | S_{t-1}=s, A_{t-1}=a],
+\end{align}
+\begin{align}
+r(s, a) \triangleq \mathbb{E}[R_t  | S_{t-1}=s, A_{t-1}=a],
+\end{align}
+and
+\begin{align}
+r(s, a, s') \triangleq \mathbb{E}[R_t  | S_{t-1}=s, A_{t-1}=a, S_t = s'].
+\end{align}
+
+A\ix{Agent vs Environment} general rule of thumb is that anything that cannot be changed \emph{arbitarily} by the agent is considered to be outside of it and thus part of the environment. The agent-environment boundary represents the limit of the agent's absolute control, not of its knowledge. 
+
+The goal of the agent is formalised in terms of the reward signal which passes from the environment to the agent. This is one of the most distinctive features of RL. 
+\begin{quote}
+	\ix{Reward Hypothesis}\emph{All of what we mean by goals and purposes can be well though of as the maximisation of the expected value of the cumulative sum of a received scalar signal.}
+\end{quote}
+The reward signal is not the place to impart to the agent prior knowlege about \emph{how} to achieve a task; if we do this, the agent may only achieve subgoals without actually acheiving the real goal. A better place to impart this knowledge is the initial policy or value function. \comment{How does this link to reward shaping?}
+
+\ix{Discount Rates}Episodic tasks terminate at some timestep, $T$, whilst continuing tasks do not. In the first case, we simply use the (expected) sum of rewards whilst we introduce discounting in the infinite horizon case i.e., 
+\begin{align}
+G_t \triangleq \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}.
+\end{align}
+$G_t$ is the \emph{discounted return}. The closer the value of $\gamma$ is to $1$, the more farsighted the agent is. 
+
+\ix{Unifying Notation}We convert episodic tasks to continuing tasks by introducting a special \emph{absorbing state} which transitions only to itself and returning zero reward. We can write:
+\begin{align}
+G_t \triangleq \sum_{k=t+1}^{T} \gamma^{k-t-1} R_k,
+\end{align}
+allowing for $T=\infty$ and $\gamma=1$. \comment{The book says not both - but I think that should be allowed for an episodic task with absorbing state.}
+
+\begin{definition}[Policy]
+	\ix{Policy}A policy is a mapping from states to probabilities of selecting each possible action. $\pi(a|s)$ is the distribution over actions, $A_t$, given the current state, $S_t$. 
+\end{definition}
+
+\begin{definition}[Value Function]
+	The\ix{Value Function} value function of state $s$ under policy $\pi$ is the expected return when starting in $s$ and following $\pi$.
+	\begin{align}
+	v_\pi(s) \triangleq \mathbb{E}_\pi [G_t | S_t = s]
+	\end{align}
+\end{definition}
+
+\begin{definition}[Action-Value Function]
+	The\ix{Action-Value Function} action-value function of action $a$, state $s$ under policy $\pi$ is the expected return when starting in $s$ and following $\pi$ after first performing $a$.
+	\begin{align}
+	q_\pi(s, a) \triangleq \mathbb{E}_\pi [G_t | S_t = s, A_t = a]
+	\end{align}
+\end{definition}
+Value functions satisfy recursive relationships. 
 
 \end{document}

@@ -1,0 +1,218 @@
+\documentclass{article}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{booktabs}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{gensymb}
+\usepackage{pdfpages}
+\usepackage{mparhack}
+
+
+\usepackage[bitstream-charter]{mathdesign}
+\let\circledS\undefined
+%% Sets page size and margins
+\usepackage[a4paper,top=2cm,bottom=2cm,left=1cm,right=1cm, marginparsep=1cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage[makeroom]{cancel}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage[colorinlistoftodos]{todonotes}
+\usepackage[colorlinks=true, allcolors=blue]{hyperref}
+\usepackage[final]{matlab-prettifier}
+\usepackage{courier}
+\usepackage{algorithm}
+\usepackage[noend]{algpseudocode}
+\usepackage[]{appendix}
+\usepackage{wrapfig}
+\usepackage[final]{matlab-prettifier}
+\usepackage[final]{mathtools}
+
+\renewcommand\labelitemi{$\bullet$}
+
+\definecolor{codecol}{rgb}{0.94, 0.94, 0.94}
+\definecolor{dgreen}{rgb}{0.1, 0.49, 0.1}
+
+\newcommand{\ea}{\nonumber \\}
+\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
+\lstset{framextopmargin=50pt,frame=bottomline}
+
+\newcommand{\norm}[2]{\left\Vert#1\right\Vert_{#2}}
+\newcommand{\question}[1]{{\color{red}\textbf{Question: }\emph{#1}}}
+\newcommand{\action}[1]{{\color{blue}\textbf{Action: }\emph{#1}}}
+\newcommand{\epdp}{$(\epsilon, \delta)$-DP}
+\newcommand{\alg}{$\mathcal{A}$}
+\newcommand{\data}{$\mathcal{D}$}
+\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
+\newcommand{\normaldist}[2]{$\mathcal{N}(#1, #2)$}
+\newcommand{\expt}[2]{\mathbb{E}_{#2}[#1]}
+\newcommand{\prob}[2]{\mathbb{P}_{#2}[#1]}
+\newcommand{\model}[1]{\mathcal{M}_{#1}}
+\newcommand{\indep}{\raisebox{0.05em}{\rotatebox[origin=c]{90}{$\models$}}}
+\newcommand{\mset}[3]{\lbrace {#1}_{#2} \rbrace_{#2=1}^{#3} }
+\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
+\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
+
+\newcommand{\ix}[1]{%
+  \leavevmode % if at the start of a paragraph
+  \marginpar{\small\emph{#1}}% the note
+}
+
+\newcommand{\qx}[1]{%
+	\leavevmode % if at the start of a paragraph
+	\marginpar{\color{blue}\small\emph{#1}}% the note
+}
+\newcommand{\marfig}[2]{
+  \marginpar{ \includegraphics[width=\marginparwidth]{#1} \centering \text{\small #2} }
+}
+
+\newcommand{\myq}[1]{%
+	\vspace{1em}
+	\noindent\underline{\emph{Exercise #1}}\vspace{0.25em}\linebreak
+}
+
+\DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
+
+\title{\textbf{Reinforcement Learning: An Introduction}\\
+\textit{Solutions: Chapter 3}
+}
+\author{Mrinank Sharma}
+
+\begin{document}
+\maketitle
+
+\myq{3.1 MDP Examples}
+\begin{enumerate}
+	\item \textbf{Uber Example}. Uber needs to choose which cars to allocated to which people requesting a ride. State is information about the passenger, other relevant information (e.g., time of day, previous knowledge about the area), information about the cars which are available. Action would be which car to allocate to the passenger. Reward could be a number of different things, including: a waiting time penalty, customer satisfaction reward, maybe some other things to. 
+	
+	\item \textbf{Youtube Example}. Youtube autoplay needs to choose the next video for you to watch. The state is it's knowledge about the viewer as well as other relevant things e.g., perhaps time of day. Reward will the be total time that the viewer spends on youtube (it could be given incrementally though).
+	
+	\item \textbf{Me choosing a book}. I need to choose the next book that I want to read. The state is my knowledge about myself e.g., my budget, my time budget. The action space is the available books that I could purchase. The reward is my satisfaction from reading the book.
+\end{enumerate}
+Not entirely sure that these are that different from each other, or that stretched. We could formulate supervised learning as an RL problem. The action is a prediction to be made for a person, the state is information about that perform and the reward is based on some measure of how close the classification (or regression) is to the true value. I guess this would work. 
+
+\myq{3.2: MDP Insufficiency}
+Some issues with MDPs could be that:
+\begin{itemize}
+	\item \textbf{Partial Observability}. We might know what the true Markov state is but simply be unable to measure it. 
+	\item \textbf{Multiple rewards}. We might want to maximise multiple things, likely involving a tradeoff. I suppose we can define some new arbitary reward function, but is this exactly what we want?
+	\item \textbf{Non-Stationary Dynamics}. It's assumed that the $p$ function remains the same (as far as I can tell). However, it could change over time, for example, humans reward functions change over a course of a lifetime.
+	\item \textbf{Can we formulate all behaviour we want as reward maximisation?} Not sure I agree with this point (VNM Rationality). Some people satisfice, but I suppose that means the reward function we have down is wrong. If they are rational, they should be maximising something. 
+	\item \textbf{Self-Direction}. In real life, people have internal rewards i.e., they choose what to pursure. Indeed, life is not entirely directed as people have a lot of freedom. In the MDP, we've assumed that this reward function is entirely external. 
+\end{itemize}
+
+\myq{3.3: Drawing the Line}
+I think the choice of action depends on precisely the problem we are trying to solve with RL. For example, if we want to solve where to go to have a good weekend, pick the high level actions. If we take where we are trying as fixed, the actions are then moreso how to drive. This gives the sense that the problems that we want to solve are hierarchical - we want to be able to plan high level behaviour as well as learn the lower level skills enabled to execute them.
+
+We might prefer one location over another because it makes the RL problem easier. For example, we could draw the agent box very small and make the actions the electrical signals that are being sent out. This seems like it could be a difficult problem to solve. I'm not sure how compelling this argument is though. 
+
+Actions should always be things that can be controlled by the agent. 
+
+\myq{3.4: $p$ functions}
+Please see Table~\ref{tab:example} for the dynamics table. 
+\begin{table}[H]
+	\caption{\label{tab:example}Dynamics Table}
+	\begin{tabular}{cccc|c}
+		$s$           & $a$             & $s'$          & $r$ & $p(s', r| s, a)$ \\ \hline
+		\texttt{high} & \texttt{search} & \texttt{high} & $r_{\texttt{search}}$ &  $\alpha$                \\
+		\texttt{high} & \texttt{search} & \texttt{low} & $r_{\texttt{search}}$ &     $1 - \alpha$             \\
+		\texttt{high} & \texttt{wait} & \texttt{high} & $r_{\texttt{wait}}$ &     $1$             \\
+		\texttt{low} & \texttt{wait} & \texttt{low} & $r_{\texttt{wait}}$ &     $1$             \\
+		\texttt{low} & \texttt{recharge} & \texttt{high} & $0$ &     $1$             \\
+		\texttt{low} & \texttt{search} & \texttt{low} & $r_{\texttt{search}}$ &     $\beta$             \\
+		\texttt{low} & \texttt{search} & \texttt{high} & $-3$ &     $1-\beta$             \\           
+	\end{tabular}
+\centering
+\end{table}
+
+\myq{3.5: Episodic Alteration}
+Using the notation of $\altmathcal{S}$ to include all states and $\altmathcal{S}^+$ to include only non-terminal states, we can write:
+
+\begin{align}
+\sum_{s' \in S} \sum_{r \in \altmathcal{R}} p(s', r | s, a) = 1, \text{for all } s\in \altmathcal{S}^+, a \in \altmathcal{A}(s).
+\end{align}
+However, for the terminal states:
+\begin{align}
+p(s' = s, r = 0| s \in \altmathcal{S}, s\notin \altmathcal{S}^+) = 1,
+\end{align}
+i.e., if we are in a terminal state, the next state is the same and there is no reward. 
+
+\textbf{Not sure if the above equation is strictly necessary to be honest!}
+
+\myq{3.6: Continuing and Episodic Tasks}
+In the episodic case, the return is $G_t = -\gamma^k$ where $k$ is the number of timesteps til the cart falls. 
+
+In the continuing case, the cart will fall an infinite number of times, not just once! Hence $G_t = -\gamma^{k_1} -\gamma^{k_2} \dots$ where $k_1$ is time to the next failure, $k_2$ is time to the failure after that, e.t.c.,
+
+\myq{3.7: Faulty Reward Signal}
+We haven't communicated that we want the robot to escape the maze \emph{as quickly as possible}. Without discounting, the reward is the same for every episode which eventually finds the maze exit. We need some discounting i.e, the reward needs to get smaller if the robot took more timesteps. 
+
+Note that if we assume that every episode goes on indefinitely, the only way termination happens is if the robot reachs the end. Thus, every single completed episode has the exact same reward. There is no way for a learner to discovered what the desired task actually is. 
+
+\myq{3.8: Episodic Return}
+Use the recursive formula. $G_5 = 0, G_4 = 2, G_3 = 3 + 0.5 \cdot 2 = 4, G_2 = 6 + 0.5\cdot4 = 8, G_1 = 2 + 0.5\cdot8 = 6, G_0 = -1 + 0.5\cdot 6 = 2.$ 
+
+\myq{3.9: Continuing Return}
+$G_1 = 7 + 0.9\cdot7 + 0.9^2\cdot 7 + \dots = \frac{7}{1-0.9}=70$. 
+$G_0 = 2 + 0.9 \cdot 70 = 65$
+
+\myq{3.10: Infinite Series Proof}
+\textbf{Note: in my version of the book, this exercise didn't make sense - it's not clear what inequalty it's refering to. Instead, I proved $(3.10)$}.
+
+\begin{align}
+G_t &= 1 + \gamma + \gamma^2 + \dots. \nonumber \\
+ &= 1 + \gamma G_t \nonumber \\
+ &= \frac{1}{1 - \gamma} 
+\end{align}
+
+\myq{3.11}
+\begin{align}
+\mathbb{E}[R_{t+1}]=  \sum_{r \in \altmathcal{R}} \sum_{a \in \altmathcal{A}(s)} \sum_{s_{t+1} \in \altmathcal{S}} p(s', r | s, a) \pi(a | s)
+\end{align}
+
+\myq{3.12}
+\begin{align}
+v_\pi(s) = \sum_{a \in \altmathcal{A}(s)} \pi(a|s)\ q_\pi(s, a)
+\end{align}
+
+\myq{3.13}
+\begin{align}
+q_\pi(s, a) = \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) \big[ r + \gamma v_\pi(s') \big]
+\end{align}
+
+\myq{3.14}
+The value of the centre, by the recursive relationship ought to be:
+\begin{align}
+\frac{0.9}{4} [2.3 + 0.7 -0.4 + 0.4] = 0.675 \simeq 0.7 \text{(1 d.p.)}
+\end{align}
+
+\myq{3.15: Shifting Rewards}
+\begin{align}
+G_t = \sum_{k=0}^{\infty} \gamma^k R_{t+k+1}.
+\end{align}
+Consider the shifted return.
+\begin{align}
+\hat{G}_t &= \sum_{k=0}^{\infty} \gamma^k \hat{R}_{t+k+1} \nonumber \\
+&=\sum_{k=0}^{\infty} \gamma^k [R_{t+k+1} + c] \nonumber \\
+&= G_t + \frac{c}{1 - \gamma}
+\end{align}
+The value function is the expected return given an initial state, and thus this function is also shifted. It is only the difference between rewards that makes a difference. 
+
+\myq{3.16: Episodic Shifting Rewards}
+In this case, it will make a difference. Consider an episodic task with a reward of $-1$ on each time step and a reward of $+5$ for finishing. This creates the behaviour of trying to minimise the time taken before finishing. Then, instead consider a reward of $+1$ on each timestep and a reward of $+7$ for finishing. Maximising this reward entails \emph{taking as long as possible to complete the task - certainty \textbf{not} what we wanted}. 
+
+The different in episodic tasks is that we don't know how long the episode was going to last. If the episode was a fixed length, this problem would go away and it wouldn't make a difference (we can see this by imagining the above sum - we would add constant to each of the value functions.)
+
+
+
+\end{document}

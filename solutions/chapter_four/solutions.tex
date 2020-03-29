@@ -1,0 +1,71 @@
+\documentclass{article}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{booktabs}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{gensymb}
+\usepackage{pdfpages}
+
+\usepackage[bitstream-charter]{mathdesign}
+\let\circledS\undefined
+%% Sets page size and margins
+\usepackage[a4paper,top=2cm,bottom=2cm,left=1cm,right=1cm, marginparsep=1cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage[makeroom]{cancel}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+
+\newcommand{\myq}[1]{%
+	\vspace{1em}
+	\noindent\underline{\emph{Exercise #1}}\vspace{0.25em}\linebreak
+}
+
+\DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
+
+\title{\textbf{Reinforcement Learning: An Introduction}\\
+\textit{Solutions: Chapter 4}
+}
+\author{Mrinank Sharma}
+
+\begin{document}
+\maketitle
+
+\myq{4.1}
+\begin{align}
+q_\pi(11, \texttt{down}) = -1 + v_\pi(\texttt{terminal}) = -1. \\
+q_\pi(7, \texttt{down}) = -1 + v_\pi(11) = -1 -14 = -15 .
+\end{align}  
+
+\myq{4.2: MDP Modifications}
+\textbf{Unchanged dynamics from current states}. In this case, the value of these states from these policies is unchanged, we've simply introduced a new state. We can calculate the value of this state using the Bellman equations:
+\begin{align}
+v_\pi(15) = -1 + \frac{1}{4}[-22 -20 -14 +v_\pi(15)] \Rightarrow v_\pi(15) = -20.
+\end{align}
+\textbf{Dynamics changed from state $13$}. In general, we'd expect this to change the value of state $13$, which would propagate to all of the other states, meaning that we'd have to recalculate the values. Let's pretend that we were running iterative policy evaluation using the previous value function as our initialisation. Let's update the value for state $13$:
+\begin{align}
+v_\pi(13) = -1 + \frac{1}{4}[-20 -22 -14 \underbrace{-20}_{\text{Estimate for } v_\pi(15)}] = -20
+\end{align}
+\textbf{The value of state $13$ hasn't changed!} Therefore, the value of state $15$, and all of the other states also won't change. We've recalculated values without having to solve those annoying equations, which is nice. 
+
+\myq{4.3: Iterative Action-Value Evaluation}
+\begin{align}
+q_\pi(s, a) &=\mathbb{E}_\pi[G_t | S_t = s, A_t = a] \nonumber \\
+&= \mathbb{E}_\pi[R_{t+1} + \gamma G_{t+1} | S_t = s, A_t = a] \nonumber \\
+&= \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma \sum_{a \in \altmathcal{A}(s')} \pi(a' | s')[q_\pi(s', a')]],
+\end{align}
+which can straightforwardly be turned into an iterative update equation. 
+
+
+\end{document}

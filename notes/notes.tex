@@ -26,60 +26,28 @@
 %% Useful packages
 \usepackage{amsmath}
 \usepackage{bm}
-\usepackage[makeroom]{cancel}
 \usepackage{enumitem}
 \usepackage{listings}
 \usepackage{multirow}
 \usepackage{amssymb}
 \usepackage{float}
 \usepackage{graphicx}
-\usepackage[colorinlistoftodos]{todonotes}
-\usepackage[colorlinks=true, allcolors=blue]{hyperref}
-\usepackage[final]{matlab-prettifier}
 \usepackage{courier}
-\usepackage{algorithm}
-\usepackage[noend]{algpseudocode}
 \usepackage[]{appendix}
 \usepackage{wrapfig}
-\usepackage[final]{matlab-prettifier}
-\usepackage[final]{mathtools}
 
-\renewcommand\labelitemi{$\bullet$}
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm,algorithmicx}
 
-\definecolor{codecol}{rgb}{0.94, 0.94, 0.94}
-\definecolor{dgreen}{rgb}{0.1, 0.49, 0.1}
 
-\newcommand{\ea}{\nonumber \\}
-\lstset{basicstyle=\footnotesize\ttfamily,breaklines=true}
-\lstset{framextopmargin=50pt,frame=bottomline}
+\newcommand*\Let[2]{\State #1 $\gets$ #2}
+\algrenewcommand\algorithmicrequire{}
+\algrenewcommand\algorithmicensure{\textbf{Postcondition:}}
 
-\newcommand{\norm}[2]{\left\Vert#1\right\Vert_{#2}}
-\newcommand{\question}[1]{{\color{red}\textbf{Question: }\emph{#1}}}
-\newcommand{\action}[1]{{\color{blue}\textbf{Action: }\emph{#1}}}
-\newcommand{\epdp}{$(\epsilon, \delta)$-DP}
-\newcommand{\alg}{$\mathcal{A}$}
-\newcommand{\data}{$\mathcal{D}$}
-\newcommand{\vect}[1]{\boldsymbol{\mathbf{#1}}}
-\newcommand{\normaldist}[2]{$\mathcal{N}(#1, #2)$}
-\newcommand{\expt}[2]{\mathbb{E}_{#2}[#1]}
-\newcommand{\prob}[2]{\mathbb{P}_{#2}[#1]}
-\newcommand{\model}[1]{\mathcal{M}_{#1}}
-\newcommand{\indep}{\raisebox{0.05em}{\rotatebox[origin=c]{90}{$\models$}}}
-\newcommand{\mset}[3]{\lbrace {#1}_{#2} \rbrace_{#2=1}^{#3} }
-\DeclarePairedDelimiter{\ceil}{\lceil}{\rceil}
-\DeclarePairedDelimiter\floor{\lfloor}{\rfloor}
 
 \newcommand{\ix}[1]{%
   \leavevmode % if at the start of a paragraph
   \marginpar{\small\emph{#1}}% the note
-}
-
-\newcommand{\qx}[1]{%
-	\leavevmode % if at the start of a paragraph
-	\marginpar{\color{blue}\small\emph{#1}}% the note
-}
-\newcommand{\marfig}[2]{
-  \marginpar{ \includegraphics[width=\marginparwidth]{#1} \centering \text{\small #2} }
 }
 
 \newcommand{\comment}[1]{
@@ -239,7 +207,55 @@ This all sounds great. However, we run into the following problems:\ix{Caveats}
 	\item The Markov property needs to hold. 
 \end{itemize}
 
+\section{Dynamic Programming}
+Dynamic Programming (DP) algorithms can be used to compute optimal policies given perfect models of the environment.\ix{Limited Utility} However, they are important only theoretically because they are limited by imperfect models and finite compute. 
 
+\ix{Policy Evaluation}\emph{Policy evaluation} computes the state-value function for policy $\pi$. We turn the Bellman equation into an update rule:
+\begin{align}
+v_{k+1}(s) \triangleq \sum_{a \in \altmathcal{A}(s)} \pi(a|s) \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma v_{k}(s)], \quad \forall s \in \altmathcal{S}.
+\end{align}
+$v_\pi$ is a fixed point for this update rule since it must satisfy the Bellman equation. Note that the estimate in general converges as $k\rightarrow\infty$ provided $\gamma < 1$ or eventual termination from all states under $\pi$ (the same conditions which give a unique value function). 
+
+This is an \emph{expected update}; the old value is replaced with a new value computed using previous values and expected immediate reward. In fact, all DP updates are called \textit{expected updates} since they take the expectation over successor states rather than sampling. 
+
+\begin{algorithm}
+	\caption{Iterative Policy Evaluation
+		\label{alg:policy_eval}}
+	\begin{algorithmic}[H]
+		\Require{
+			\textbf{Input:} $\pi$, the policy to be evaluated \\
+			\textbf{Parameters:} $\theta >0$, a threshold determining accuracy. \\
+			\textbf{Initialisation:} initialise $V(s)$ arbitarily for all $s \in \altmathcal{S}$ except that $V(\text{terminal})=0$
+		}
+	    \Statex
+		\Loop
+			\Let{$\Delta$}{0}
+			\For{each $s \in \altmathcal{S}$}: \Comment{Sweep over states, using the most recent values of $V(s)$}
+				\Let{$v$}{$V(s)$}
+				\Let{$V(s)$}{$\sum_{a \in \altmathcal{A}(s)} \pi(a|s) \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma V(s')]$}
+				\Let{$\Delta$}{$\max(\Delta, |v - V(s)|)$}
+			\EndFor
+		\EndLoop\textbf{until $\Delta < \theta$}
+	\end{algorithmic}
+\end{algorithm}
+
+If we know the dynamics, knowing the value of the policy helps us improve the policy. We can compute the value of selecting action $a$ in state $s$ and thereafter following $\pi$. If it is better to select $a$ once in $s$ and thereafter follow $\pi$, it is better to always select $a$ in $s$ and the new policy is an improvement. 
+
+\begin{theorem}[Policy Improvement Theorem]
+ \ix{Policy Improvement Theorem}Let $\pi$ and $\pi'$ be any pair of determinstic policies such that, for all $s \in \altmathcal{S}$, 
+ \begin{align}
+ q_\pi(s, \pi'(s)) \geq v_\pi(s). \label{eq:policy_improvement_a}
+ \end{align} 
+ Then $\pi'$ must be as good as, or better than, $\pi$ i.e., it must obtain greater or equal expected return from all states $s \in \altmathcal{S}$:
+ \begin{align}
+ 	v_\pi'(s) \geq v_\pi(s). \label{eq:policy_improvement_b}
+ \end{align}
+ Note that if there is any strict inequality in Eq.~\eqref{eq:policy_improvement_a}, there must be a strict inequality in Eq.~\eqref{eq:policy_improvement_b} in \emph{at least} one state.  
+\end{theorem} 
+
+The greedy policy i.e., $\pi'(s) = \arg \max_a q_\pi(s, a)$, meets the conditions of the policy improvement theorem.\ix{Policy Improvement} The process of making a new policy which improves on an original policy by making it greedy with respect its value function is known as \textit{policy improvement}. If policy improvement gives us a policy with the same perform as the old policy, this policy must necessarily be optimal as only the optimal policy satifies the Bellman optimality equation.  
+
+Note that similar analysis can be performed for stochastic policies.
 
 
 \end{document}

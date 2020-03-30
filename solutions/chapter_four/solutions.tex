@@ -34,6 +34,13 @@
 
 \DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
 
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm,algorithmicx}
+
+\newcommand*\Let[2]{\State #1 $\gets$ #2}
+\algrenewcommand\algorithmicrequire{}
+\algrenewcommand\algorithmicensure{\textbf{Postcondition:}}
+
 \title{\textbf{Reinforcement Learning: An Introduction}\\
 \textit{Solutions: Chapter 4}
 }
@@ -67,5 +74,94 @@ q_\pi(s, a) &=\mathbb{E}_\pi[G_t | S_t = s, A_t = a] \nonumber \\
 \end{align}
 which can straightforwardly be turned into an iterative update equation. 
 
+\myq{4.4: Policy Iteration Bug}
+If policy is switching between policies which are equally good, both of the policies are optimal. There must be multiple actions in each step which give the same expected optimal return, and the suggested algorithm does not state how to break ties. We should be able to fix this by settling ties in the $\arg\max$ operation, for example, by indexing all of the actions and always choosing the lowest index amongst optimal options. 
+
+\begin{algorithm}[H]
+	\caption{Policy Iteration
+		\label{alg:policy_eval}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Initialisation:} initialise $V(s)$ arbitarily for all $s \in \altmathcal{S}$ except that $V(\text{terminal})=0$. Initalise $\pi(s) \in \altmathcal{A}(s)$ arbitrarily for all $s \in \altmathcal{S}$.} 
+		\Require{\textbf{Parameters: } $\theta > 0$, a threshold determining accuracy.}
+		\Statex
+		\Loop: \Comment{Policy Evaluation} \label{alg:policy_iteration:eval_loop}
+		\Let{$\Delta$}{0}
+		\For{each $s \in \altmathcal{S}$}: 
+		\Let{$v$}{$V(s)$}
+		\Let{$V(s)$}{$\sum_{a \in \altmathcal{A}(s)} \pi(a|s) \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma V(s')]$}
+		\Let{$\Delta$}{$\max(\Delta, |v - V(s)|)$}
+		\EndFor
+		\EndLoop\\\textbf{until $\Delta < \theta$}
+		\Statex
+		\Let{$\texttt{policy-stable}$}{True} \Comment{Policy Improvement}
+		\For{each $s \in \altmathcal{S}$}: 
+		\Let{\texttt{old-action}}{$\pi(s)$}
+		\Let{$\pi(s)$}{$\arg \max_{a \in \altmathcal{A}(s)} \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma V(s')]$} \Comment{Settle ties by index.}
+		\If{\texttt{old-action} $\neq \pi(s)$}: 
+		\Let{$\texttt{policy-stable}$}{True}
+		\EndIf
+		\EndFor
+		\If{\texttt{policy-stable}}:
+		\State \Return $V \simeq v_*, \pi 
+		\simeq \pi* $
+		\Else: \State \textbf{ go to} \ref{alg:policy_iteration:eval_loop}
+		\EndIf
+	\end{algorithmic}
+\end{algorithm}
+
+\myq{4.5: Policy Iteration with $q(s, a)$}
+I will assume deterministic policies here, using the same bug fix. 
+\begin{algorithm}[H]
+	\caption{$Q$ Iteration
+		\label{alg:q_policy_eval}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Initialisation:} initialise $Q(a, s)$ arbitarily for all $s \in \altmathcal{S}, a \in \altmathcal{A}$ except that $Q(\text{terminal}, a)=0\quad \forall a$. Initalise $\pi(s) \in \altmathcal{A}(s)$ arbitrarily for all $s \in \altmathcal{S}$.} 
+		\Require{\textbf{Parameters: } $\theta > 0$, a threshold determining accuracy.}
+		\Statex
+		\Loop: \Comment{Policy Evaluation} \label{alg:q_policy_iteration:eval_loop}
+		\Let{$\Delta$}{0}
+		\For{each $s \in \altmathcal{S}$}: 
+			\For{each $a \in \altmathcal{A}(s)$}
+		\Let{$q$}{$Q(s, a)$}
+		\Let{$Q(s, a)$}{$\sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a)[r + \gamma Q(s', \pi(s'))]$}
+		\Let{$\Delta$}{$\max(\Delta, |q - Q(s, a)|)$}
+		\EndFor
+		\EndFor
+		\EndLoop\\\textbf{until $\Delta < \theta$}
+		\Statex
+		\Let{$\texttt{policy-stable}$}{True} \Comment{Policy Improvement}
+		\For{each $s \in \altmathcal{S}$}: 
+		\Let{\texttt{old-action}}{$\pi(s)$}
+		\Let{$\pi(s)$}{$\arg \max_{a \in \altmathcal{A}(s)} Q(s, a)$} \Comment{Settle ties by index.}
+		\If{\texttt{old-action} $\neq \pi(s)$}: 
+		\Let{$\texttt{policy-stable}$}{True}
+		\EndIf
+		\EndFor
+		\If{\texttt{policy-stable}}:
+		\State \Return $Q \simeq q_*, \pi 
+		\simeq \pi* $
+		\Else: \State \textbf{ go to} \ref{alg:q_policy_iteration:eval_loop}
+		\EndIf
+	\end{algorithmic}
+\end{algorithm}
+
+\myq{4.6: $\epsilon$-soft policies}
+Let's restrict ourself to determinstic + $\epsilon$-soft policies. i.e.,
+\begin{align}
+\pi(a | s) = \begin{cases}
+1 - \frac{|\altmathcal{A}(s)| - 1 }{|\altmathcal{A}(s)|}\epsilon, \quad &a = \pi_d(s) \\
+\frac{\epsilon}{\altmathcal{A}(s)}, &\text{otherwise}
+\end{cases},
+\end{align}
+where $\pi_d$ is now effectively the determinstic part of the policy. Now, we make the following changes:
+\begin{enumerate}[noitemsep]
+	\item No change to the initialise of the algorithm. 
+	\item Update the value of the policy by adding a marginalisation step over the possible actions to be selected. 
+	\item In policy improvement, update only the determinstic part of the policy, but using the value of the soft policy to perform the updates. 
+\end{enumerate}
+
+\textbf{Note: not fully clear to me that considering this form is policy is sufficient. There are many stochastic policies which we could add a soft part to.}
 
 \end{document}

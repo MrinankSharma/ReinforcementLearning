@@ -289,5 +289,37 @@ Note that similar analysis can be performed for stochastic policies.
 		\EndIf
 	\end{algorithmic}
 \end{algorithm}
+It\ix{Value Iteration} turns out that we don't even need to perform policy evaluation until convergence. We form the \emph{value iteration} algorithm by performing one step of policy evaluation followed by policy improvement. 
+
+\begin{algorithm}[H]
+	\caption{Value Iteration
+		\label{alg:value_iteration}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Initialisation:} initialise $V(s)$ arbitarily for all $s \in \altmathcal{S}$ except that $V(\text{terminal})=0$. Initalise $\pi(s) \in \altmathcal{A}(s)$ arbitrarily for all $s \in \altmathcal{S}$.} 
+		\Require{\textbf{Parameters: } $\theta > 0$, a threshold determining accuracy.}
+		\Statex
+		\Loop: 
+		\Let{$\Delta$}{0}
+		\For{each $s \in \altmathcal{S}$}: 
+		\Let{$v$}{$V(s)$}
+		\Let{$V(s)$}{$\max_{a \in \altmathcal{A}(s)}  \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a) [r + \gamma V(s')]$}
+		\Let{$\Delta$}{$\max(\Delta, |v - V(s)|)$}
+		\EndFor
+		\EndLoop\\\textbf{until $\Delta < \theta$}
+		\State \Return $\pi(s) = \arg \max_a p(s', r | s, a) [r + \gamma V(s')] \simeq \pi^*(s), V(s) \simeq v_*(s)$
+	\end{algorithmic}
+\end{algorithm}
+The algorithm\ix{Alternative Interpretation} can also be interpreted as the conversation of the Bellman optimality equality to an update rule. Above, $V$ will converge to $v_*$. 
+
+\ix{Asynchronous DP}\textit{Asynchrononous DP algorithms} are in-place iterative DP algorithms which are not organised in terms of sweeping the entire state space (a drawback of normal DP). The algorithm \textit{must} continue to update all states to ensure correct convergence. 
+
+\ix{Generalised Policy Iteration}\textit{Generalied policy iteration} (GPI)\footnote{Margin figure reproduced from Sutton, Richard S., and Andrew G. Barto. \textit{Reinforcement learning: An introduction.} MIT press, 2018.} refers to the general idea of letting policy-evaluation and policy-improvement processes interact, independent of the granularity. \marginpar{\includegraphics[width=\marginparwidth]{figs/gpi}\\\small Generalised Policy Iteration (GPI)}If \textbf{both the evaluation and improvement stabilise, the value function and policy must be optimal}. The value function stabilises only when it is consisent with the current policy and policy stabilises only when it is greedy with respect to the current value function. Both stabilising implies that a policy has been found which is greedy with respect to its own evaluation function, implying that the Bellman optimality equation holds. 
+
+Whilst not practical for large problems, DP methods are actually quite efficient with (worst-case) complexity $\Omega(\texttt{poly}(n, k))$  where $n, k$ are the number of states and actions respectively. They also seem to typically converge must faster than the worst case. 
+
+\ix{Bootstrapping}DP methods update estimates of the values of states based on estimates of the values of successor states; \textbf{bootstrapping}. 
+
+
 
 \end{document}

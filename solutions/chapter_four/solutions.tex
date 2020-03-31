@@ -164,4 +164,91 @@ where $\pi_d$ is now effectively the determinstic part of the policy. Now, we ma
 
 \textbf{Note: not fully clear to me that considering this form is policy is sufficient. There are many stochastic policies which we could add a soft part to.}
 
+\myq{4.7: Policy Iteration}
+Note that we cheated by truncating the poisson distributions (as in the Github replication of the original figure) and also returned a constant number of cars (also as in the reproduction) to make the code run faster. Relevant code is on the Github repo. The replication from the book is found in Fig.~\ref{fig:original_sol}.
+
+The solution to the modified problem can be seen in Fig.~\ref{fig:modified_sol}. The shape is pretty wacky. As expected, we play $1$ quite frequently now because it is free for us to move a car from location $1$ to $2$ (and it it also often makes sense because of the demands are these places). 
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{original}
+	\centering
+	\caption{\label{fig:original_sol} Replication of Fig. 4.2}
+\end{figure}
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{modified}
+	\centering
+	\caption{\label{fig:modified_sol} Modified Problem Solution}
+\end{figure} 
+
+State and action space isn't that big here and still dynamic programming was very very slow! We had to perform truncation and an incorrect approximation to get this solution. This shows the limitation of this method, as wonderful as it is. 
+
+\myq{4.8: Gambler's Problem I}
+I'm a bit confused about this problem! It definitely seems super strange to me. Here are some thoughts:
+\begin{itemize}[noitemsep]
+	\item The coin is biased \textit{against} us. Paths which require shorter succesful flips are much more likely to happen, and so we should favour them. 
+	\item Gambling as much as possible, but not more than needed seems to be good. This always give a (minimum of) $40\%$ of winning. Indeed, from $50$ dollars , this is what the optimal strategy does.
+	\item It seems super strange to me that betting $50$ dollars is optimal at $50$, but if you have one more dollar, you should bet only $1$? I would have thought betting $49$ dollars in this case would be best. 
+\end{itemize}
+I looked a bit online and it seems that families of optimal policies are basically the bets which could take us to the peaks of the policy graph e.g., from $51$ bets could be $1, 24$ or $49$. But honestly, I don't really see why. 
+
+Since the coin is against us, if we bet on making lots of conservative bets, in expected value, the value will keep going down and down. 
+\begin{align}
+\mathbb{E}[c_{t+1}] &= c_t - b + p\cdot 2b = c_t -b (1 - 2p)  
+\end{align}
+So in general, we ought to minimise the expected number of flips to success. If we made loads of small bets, basically the law of large numbers would mean that eventually we'd definitely lose all of our money. But, if we make small numbers of bets, we basically are far more likely to \emph{get lucky}, so in general, this is what we should do. Its interesting that this is \textbf{not} what the strategy does! It doesn't bet it all when capital is greater than fifty, even though it could. 
+
+See. Fig.~\ref{fig:reprod} for a reproduction. This shows that there are indeed multiple optimal moves. The strategy of always betting the most you can works well. Its funny that move of $0$ always seems to be optimal too, showing that you can never increase your chance of winning on average. The strategy seems to head to the attractor points.   
+
+I think there is a lot more that could be said for this problem. 
+
+\textcolor{red}{I don't think that this is particularly insightful. If you have anything better, please contact me!}
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{reprod}
+	\centering
+	\caption{\label{fig:reprod} Reproduction of Gamblers Problem}
+\end{figure} 
+
+\myq{4.9: Programming the Gamblers Problem}
+Please see Figures \ref{fig:more_unfair}, \ref{fig:more_unfair}, \ref{fig:less_unfair_more_runs}, \ref{fig:less_unfair_even_more_runs} for results.
+
+The solution is not stable when the coin is biased to give the player the advantage. Note that the solutions that we do get however play much more conservatively - we want to play many games now, because, on average, we expect to win. 
+
+When the coin is even more biased against us, we get the same strategy with less value, which is not surprising. 
+
+Note that we haven't employed discounting here (i.e., we don't care how long we are playing for). If we did, I think the solution would be stable (though I haven't tried it). 
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{more_unfair}
+	\centering
+	\caption{\label{fig:more_unfair} less chance of winning}
+\end{figure} 
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{less_unfair}
+	\centering
+	\caption{\label{fig:less_unfair}better chance of winning}
+\end{figure} 
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{less_unfair_more_runs}
+	\centering
+	\caption{\label{fig:less_unfair_more_runs}better chance of winning, $512$ steps of value iteration}
+\end{figure} 
+
+\begin{figure}
+	\includegraphics[width=\textwidth]{less_unfair_even_more_runs}
+	\centering
+	\caption{\label{fig:less_unfair_even_more_runs}better chance of winning, $1024$ steps of value iteration}
+\end{figure} 
+
+\myq{4.10: $Q$-Value Iteration}
+\begin{align}
+q_{k+1}(s, a) = \sum_{s' \in \altmathcal{S}, r \in \altmathcal{R}} p(s', r | s, a)[r + \gamma \max_{a' \in \altmathcal{A}(s')} q_k(s', a') ],
+\end{align}
+which is very similar to $Q$-Learning (but of course, here we know the MDP we are in). 
+
+
+
 \end{document}

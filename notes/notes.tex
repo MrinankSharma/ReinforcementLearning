@@ -500,5 +500,49 @@ The first-visit version of the ordinary IS estimator is unbiased with high varia
 
 A problem with this algorithm is that it learns only from the tails of episodes where the remaining actions are greedy with respect to the current policy. If non-greedy actions are common, learning will be slow, especially for early actions. 
 
+\section{Temporal-Difference Learning}
+\ix{Temporal-Difference Learning}\emph{Temporal-Difference Learning} (TD Learning) is a combination of Monte Carlo and Dynamic Programming ideas. Like MC methods, TD learning uses raw experience without an environmental model but it also bootstraps, using estimates of successor states to improve state estimates. 
+
+\ix{TD Prediction}Monte Carlo methods wait until the return following the visit is known and then use return as a target for $V(S_t)$. For example, \emph{constant}-$\alpha$ \emph{MC} uses:
+\begin{align}
+V(S_t) \leftarrow V(S_t) + \alpha [G_t - V(S_t)],
+\end{align}
+which is simple and appropriate for non-stationary problems. \textbf{TD methods wait only until the next time step, bootstrapping to estimate the reward}, 
+\begin{align}
+V(S_t) \leftarrow V(S_t) + \alpha [R_{t+1} +\gamma V(S_{t+1}) - V(S_t)].
+\end{align}
+This is known as the $TD(0)$ update, an estimate of the value of state as it samples the reward and uses an estimate of the successor state.\marginpar{\centering \includegraphics[width=0.2\marginparwidth]{figs/td_zero_backup}\\\small $TD(0)$ Backup Diagram} 
+
+\begin{algorithm}[H]
+	\caption{Tabular TD(0) Prediction
+		\label{alg:tab_td_zero}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Input:} \Statex \hspace{\algorithmicindent} policy $\pi$ to be evaluated. \Statex \hspace{\algorithmicindent} step size $\alpha \in [0, 1]$
+		}\Statex 
+		\Require{
+			\textbf{Initialisation:} \Statex \hspace{\algorithmicindent} initialise $V(s)$ arbitarily for all $s \in \altmathcal{S}$ except that $V(\text{terminal})=0$. Initalise \
+		} 
+		\Statex
+		\For{each episode}: 
+		\State Generate initial state $S$. 
+		\While{episode not terminated}:
+		\Let{$A$}{$ \pi(S) $} 
+		\State \text{Perform action $A$, observe $R, S'$}
+		\Let{$V(S)$}{$V(S) + \alpha [R +\gamma V(S') - V(S)]$}
+		\Let{$S$}{$S'$}
+		\EndWhile
+		\EndFor
+	\end{algorithmic}
+\end{algorithm}
+
+\ix{TD Error}The TD error is defined as:
+\begin{align}
+\delta_t \triangleq R_{t+1} + \gamma V(S_{t+1}) - \gamma V(S).
+\end{align}
+The RD error is the error in the estimate \emph{made at that time}. Note that $\delta_t$ is only available at time $t+1$. It can be shown that the Monte Carlo error can be written as a sum of TD errors:
+\begin{align}
+G_t - V(S_t) = \sum_{k=t}^{T-1} \gamma^{k-t} \delta_k
+\end{align}
 
 \end{document}

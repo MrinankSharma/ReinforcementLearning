@@ -1,0 +1,80 @@
+\documentclass{article}
+\newcommand\hmmax{0}
+\newcommand\bmmax{0}
+\usepackage{booktabs}
+
+%% Language and font encodings
+\usepackage[english]{babel}
+\usepackage[utf8x]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{gensymb}
+\usepackage{pdfpages}
+
+\usepackage[bitstream-charter]{mathdesign}
+\let\circledS\undefined
+%% Sets page size and margins
+\usepackage[a4paper,top=2cm,bottom=2cm,left=1cm,right=1cm, marginparsep=1cm]{geometry}
+
+%% Useful packages
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage[makeroom]{cancel}
+\usepackage{enumitem}
+\usepackage{listings}
+\usepackage{multirow}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{wrapfig}
+
+\newcommand{\myq}[1]{%
+	\vspace{1em}
+	\noindent\underline{\emph{Exercise #1}}\vspace{0.25em}\linebreak
+}
+
+\DeclareMathAlphabet{\altmathcal}{OMS}{cmsy}{m}{n}
+
+\usepackage[noend]{algpseudocode}
+\usepackage{algorithm,algorithmicx}
+
+\newcommand*\Let[2]{\State #1 $\gets$ #2}
+\algrenewcommand\algorithmicrequire{}
+\algrenewcommand\algorithmicensure{\textbf{Postcondition:}}
+
+\title{\textbf{Reinforcement Learning: An Introduction}\\
+\textit{Solutions: Chapter 6}
+}
+\author{Mrinank Sharma}
+
+\begin{document}
+\maketitle
+
+\myq{6.1: TD to MC error}
+We have:
+\begin{align}
+\delta_t = R_{t+1} + \gamma V_t(S_{t+1}) - V_t(S_t),
+\end{align} 
+i.e., the error using the estimates at time $t$. We can write the update rule:
+\begin{align}
+V_{t+1}(S_t) &= V_{t}(S_t) + \alpha [R_{t+1} + \gamma V_{t}(S_{t+1}) - V_t(S_t)] \nonumber \\
+&= V_t(S_t) + \alpha \delta_t.
+\end{align}
+Rearranging yields:
+\begin{align}
+V_{t+1}(s) - V_t(s) = \begin{cases}
+\alpha \delta_t, \quad &s = S_t \\
+0, & \text{otherwise}
+\end{cases}.
+\end{align}
+Now, we follow the same steps as in the book. 
+
+\begin{align}
+G_t - V_t(S_t) &= R_{t+1} + \gamma G_{t+1} - V_t(S_t) \nonumber \\
+&= R_{t+1} + \gamma V_t(S_{t+1}) - V_t(S_t) + \gamma [G_{t+1} - V_{t+1}(S_{t+1}) + V_{t+1}(S_{t+1}) - V_{t}(S_{t+1}) ] \nonumber \\
+&= \delta_t + \gamma \alpha \mathbb{I} \lbrace S_{t+1} = S_t\rbrace + \gamma [G_{t+1} - V_{t+1}(S_{t+1})] \nonumber \\
+&\ \ \vdots \nonumber \\
+&=\sum_{k=t}^{T-1} \gamma^{k-t} \delta_k [1 + \alpha \gamma \mathbb{I} \lbrace S_{k+1} = S_k\rbrace ].
+\end{align}
+This is incredibly similar as before, but we have additional $\alpha \gamma$ terms if the new state was the same as the old one, because only in these do we need our correction term. 
+
+\end{document}

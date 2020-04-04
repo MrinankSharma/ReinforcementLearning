@@ -42,6 +42,9 @@
 \newcommand*\Let[2]{\State #1 $\gets$ #2}
 \algrenewcommand\algorithmicrequire{}
 \algrenewcommand\algorithmicensure{\textbf{Postcondition:}}
+\algdef{SE}[SUBALG]{Indent}{EndIndent}{}{\algorithmicend\ }%
+\algtext*{Indent}
+\algtext*{EndIndent}
 
 
 \newcommand{\ix}[1]{%
@@ -314,12 +317,188 @@ The algorithm\ix{Alternative Interpretation} can also be interpreted as the conv
 
 \ix{Asynchronous DP}\textit{Asynchrononous DP algorithms} are in-place iterative DP algorithms which are not organised in terms of sweeping the entire state space (a drawback of normal DP). The algorithm \textit{must} continue to update all states to ensure correct convergence. 
 
-\ix{Generalised Policy Iteration}\textit{Generalied policy iteration} (GPI)\footnote{Margin figure reproduced from Sutton, Richard S., and Andrew G. Barto. \textit{Reinforcement learning: An introduction.} MIT press, 2018.} refers to the general idea of letting policy-evaluation and policy-improvement processes interact, independent of the granularity. \marginpar{\includegraphics[width=\marginparwidth]{figs/gpi}\\\small Generalised Policy Iteration (GPI)}If \textbf{both the evaluation and improvement stabilise, the value function and policy must be optimal}. The value function stabilises only when it is consisent with the current policy and policy stabilises only when it is greedy with respect to the current value function. Both stabilising implies that a policy has been found which is greedy with respect to its own evaluation function, implying that the Bellman optimality equation holds. 
+\ix{Generalised Policy Iteration}\textit{Generalied policy iteration} (GPI)\footnote{\label{ft:book}Margin figure reproduced from Sutton, Richard S., and Andrew G. Barto. \textit{Reinforcement learning: An introduction.} MIT press, 2018.} refers to the general idea of letting policy-evaluation and policy-improvement processes interact, independent of the granularity. \marginpar{\includegraphics[width=\marginparwidth]{figs/gpi}\\\small Generalised Policy Iteration (GPI)}If \textbf{both the evaluation and improvement stabilise, the value function and policy must be optimal}. The value function stabilises only when it is consisent with the current policy and policy stabilises only when it is greedy with respect to the current value function. Both stabilising implies that a policy has been found which is greedy with respect to its own evaluation function, implying that the Bellman optimality equation holds. 
 
 Whilst not practical for large problems, DP methods are actually quite efficient with (worst-case) complexity $\Omega(\texttt{poly}(n, k))$  where $n, k$ are the number of states and actions respectively. They also seem to typically converge must faster than the worst case. 
 
 \ix{Bootstrapping}DP methods update estimates of the values of states based on estimates of the values of successor states; \textbf{bootstrapping}. 
 
+\section{Monte Carlo Methods}
+We now \textbf{relax the assumption that we have complete knowledge of the environment}, transforming the task into \textit{learning} rather than \textit{planning}. \ix{Compared to DP}Whilst in DP, value functions were computed, here they will be learnt. Additionally, note that surprisingly often, even when we have perfect knowledge of the environment, it is hard to apply DP since the dynamics function, $p$, is difficult to obtain (though it can be easy to sample from). 
+
+\ix{Monte Carlo Methods}Monte Carlo (MC) methods solve RL problems by averaging sample returns. Here, they are defined only for episodic tasks to ensure the returns are well defined. They are incremental on an episode-by-episode sense but not in a step-by-step sense. 
+
+\ix{Monte Carlo Prediction}\emph{Monte Carlo Prediction}\footnotemark[1] attempts to learn the state-value function for a policy. An obvious way to estimate it is to simply average the returns observed after visiting that state.\marginpar{\centering \includegraphics[width=0.2\marginparwidth]{figs/mc_backup}\\\small Monte Carlo Backup Diagram}\begin{algorithm}[H]
+	\caption{First-visit MC Prediction
+		\label{alg:first_mc_pred}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Input:} policy $\pi$ to be evaluated. 
+		}
+		\Require{
+			\textbf{Initialisation:} initialise $V(s)$ arbitarily for all $s \in \altmathcal{S}$ except that $V(\text{terminal})=0$. Initalise \texttt{returns[s]} $\leftarrow [] \text{ for all }s \in \altmathcal{S}$ 
+		} 
+		\Statex
+		\Loop: 
+			\State Generate an episode under $\pi$: $\lbrace S_0, A_0, R_1, S_1, A_1, R_2, ..., S_{T-1}, A_{T-1}, R_T \rbrace$
+			\Let{$G$}{$0$}
+			\For{$t \in \lbrace T-1, T-2, ..., 0\rbrace$}:
+				\Let{$G$}{$R_{t+1} + \gamma G$} \Comment{Recusively compute $G$}
+				\If{$S_t \notin \lbrace S_0, S_1, \ldots S_{t-1} \rbrace$}:\Comment{If first visit}
+					\State \texttt{append} $G$ to $\texttt{returns}[S_t]$
+					\Let{V($S_{t+1}$)}{\texttt{average}(\texttt{returns}[$S_t$])}
+				\EndIf
+			\EndFor
+		\EndLoop
+	\end{algorithmic}
+\end{algorithm}
+The \textit{every-visit} MC algorithm instead averages the returns following all visits to each state. Both every-visit and first-visit converge to $v_\pi$ quadratically as the number of visits to each state goes to infinity. 
+
+MC methods do not bootstrap; the estimates for each state are independent. Note that the computational expense of estimating the state value is independent of the total number of states and we can generate many episodes starting from states of interest if we desire. 
+
+Note that since we no longer have a model, knowing $v_\pi$ is not sufficient for policy improvement. We instead need to calculate $q_\pi$. This can be done in a manner similar to Algorithm~\ref{alg:first_mc_pred} except that now each `visit' is a tuple $(s, a)$.\ix{Exploring Starts} However, there is no guarantee that each state-action pair is visited i.e., we have an issue of \textit{maintaining exploration}. One way to resolve this is \textit{exploring starts} where it is specified that the episode begins in a specific state-action pair and that every pair has a non-zero probability of selection. Alternatively, we could consider policies which always assign strictly positive probabilities to all actions. 
+
+\ix{Monte Carlo Control}We can naturally apply GPI, using MC methods to calculate $q_\pi$. 
+\begin{algorithm}[H]
+	\caption{MCES: Monte Carlo Exploring Starts
+		\label{alg:mces}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Initialisation:} initialise $\pi(s) \in \altmathcal{A}(s)$ arbitarily, for all $s \in \altmathcal{S}$. Initialise $Q(s, a)$ arbitarily for all $s \in \altmathcal{S}, a \in \altmathcal{A}$. Initalise \texttt{returns[$s, a$]} $\leftarrow [] \text{ for all }s \in \altmathcal{S}$ 
+		} 
+		\Statex
+		\Loop: 
+		\State Choose $S_0 \in \altmathcal{S}, A_0 \in \altmathcal{A}(S_0)$ such that all pairs have probability $>0$
+		
+		\State Generate an episode from $S_0, A_0$ under $\pi$: $\lbrace S_0, A_0, R_1, S_1, A_1, R_2, ..., S_{T-1}, A_{T-1}, R_T \rbrace$
+		\Let{$G$}{$0$}
+		\For{$t \in \lbrace T-1, T-2, ..., 0\rbrace$}:
+		\Let{$G$}{$R_{t+1} + \gamma G$} \Comment{Recusively compute $G$}
+		\If{$(S_t, A_t) \notin \lbrace (S_0, A_0), (S_1, A_0), \ldots (S_{t-1}, A_{t-1}) \rbrace$}:\Comment{If first visit}
+		\State \texttt{append} $G$ to $\texttt{returns}[S_t, A_t]$
+		\Let{Q($S_{t+1}, A_t$)}{\texttt{average}(\texttt{returns}[$S_t$])}
+		\Let{$\pi(S_t)$}{$\arg \max_{a \in \altmathcal{A}(S_t)} Q(S_t, a)$}
+		\EndIf
+		\EndFor
+		\EndLoop
+	\end{algorithmic}
+\end{algorithm}
+Note that all returns for each state-action pair are averaged regardless of the policy used. MCES cannot converge to any suboptimal optimal; if it did, the value function would eventually converge to the correct value function, which would cause the policy to change if it is suboptimal. Additionally, it seems that updates to $Q$ ought to decrease over time. However, formal correct convergence has not been proved for this algorithm. 
+
+\ix{Relaxing Exploring Starts}Exploring starts cannot be relied upon in general, especially when learning directly from actual interaction with an environment. We need to relax this, which we can do by, in general, allowing the agent to continue selecting them. 
+
+\begin{algorithm}[H]
+	\caption{On-policy first-visit MC Control
+		\label{alg:on_policy_mc_control}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Parameter:} \Statex \hspace{\algorithmicindent} small $\epsilon > 0$	
+		}
+	\Statex
+		\Require{
+			\textbf{Initialisation:} \Statex \hspace{\algorithmicindent} $\pi$ as an arbitarily $\epsilon$-soft policy. \Statex \hspace{\algorithmicindent} $Q(s, a)$ arbitarily for all $s \in \altmathcal{S}, a \in \altmathcal{A}$. \Statex \hspace{\algorithmicindent} \texttt{returns[$s, a$]} $\leftarrow [] \text{ for all }s \in \altmathcal{S}$ 
+		} 
+		\Statex
+		\Loop: 		
+		\State Generate an episode from under $\pi$: $\lbrace S_0, A_0, R_1, S_1, A_1, R_2, ..., S_{T-1}, A_{T-1}, R_T \rbrace$
+		\Let{$G$}{$0$}
+		\For{$t \in \lbrace T-1, T-2, ..., 0\rbrace$}:
+		\Let{$G$}{$R_{t+1} + \gamma G$} \Comment{Recusively compute $G$}
+		\If{$(S_t, A_t) \notin \lbrace (S_0, A_0), (S_1, A_0), \ldots (S_{t-1}, A_{t-1}) \rbrace$}:\Comment{If first visit}
+		\State \texttt{append} $G$ to $\texttt{returns}[S_t, A_t]$
+		\Let{Q($S_{t+1}, A_t$)}{\texttt{average}(\texttt{returns}[$S_t$])}
+		\Let{$A^*$}{$\arg \max_{a \in \altmathcal{A}(S_t)} Q(S_t, a)$} \Comment{Break ties arbitarily}
+		\Let{$\pi(a | S_t)$}{$\begin{cases}1 - \epsilon + \epsilon / \altmathcal{A}(S_t), \quad &a = A^*  \\ \epsilon / \altmathcal{A}(S_t), &\text{otherwise} \end{cases},\quad \forall a \in \altmathcal{A}(S_t)$}
+		\EndIf
+		\EndFor
+		\EndLoop
+	\end{algorithmic}
+\end{algorithm}
+The policy improvement theorem ensures that any $\epsilon$-greedy policy is an improvement over any $\epsilon$-soft policy. Policy iteration works for $\epsilon$-soft policies, and the above algorithm will find the best possible soft policy. 
+
+\ix{Off-Policy Learning}Learning control methods aim to learn action values conditional on subsequent optimal behaviour but they need to behave non-optimally to explore all actions. Algorithm~\ref{alg:on_policy_mc_control} is a compromise, learning action-values for a `near'-optimal policy. Alternatively, we could use two policies; one to generate behaviour (the \emph{behavioural policy}) and one to approach optimal behaviour (the \emph{target policy}). This approach is known as \emph{off-policy learning}. 
+
+The \emph{prediction} policy seeks to estimate $q_\pi$ or $v_\pi$ but from behaviour generated by policy $b$. We need to make the assumption of \textbf{coverage}, $\pi(a|s) >0 \Rightarrow b(a|s) > 0$. We do off-policy learning most frequently using \emph{importance sampling} (IS). Sparing the derivation, the \emph{ordinary importance sampling} estimator is:\ix{Ordinary Importance Sampling}
+\begin{align}
+v_\pi(s) &= \mathbb{E}_\pi[G_t | S_t=s] \nonumber \\ 
+&\simeq \sum_{t \in \altmathcal{T}(s)} \frac{\rho_{t:T(t)-1}}{|\altmathcal{T}(s)|} G_t \label{eq:ord_imp_sample}
+\end{align}
+where, for notational convenience, the episodes are appended to one another so that a timestep uniquely indentifies a timestep within an episode, $ \altmathcal{T}(s) $ is the set of times at which $s$ was visited, $ T(t) $ is the termination time of the episode which $t$ belong to. $\rho_{t:T-1}$ are the importance weights:
+\begin{align}
+	\rho_{t:T-1} &= \prod_{k=t}^{T-1} \frac{p(R_{k+1}, S_{k+1} | S_k, A_k) \pi(A_k | S_k )}{p(R_{k+1}, S_{k+1} | S_k, A_k)b(A_k|S_k)} \nonumber \\
+	&=  \prod_{k=t}^{T-1} \frac{\pi(A_k | S_k )}{b(A_k|S_k)}.
+\end{align} 
+The above formulae are straightforward to derive following the standard importance sampling derivation. Note that the dynamics of the unknown MDP cancel out. 
+
+\ix{Weighted Important Sampling}An alternative to Eq.~\eqref{eq:ord_imp_sample} is \emph{weighted importance sampling}:
+\begin{align}
+v_\pi(s) \simeq \sum_{t \in \altmathcal{T}(s)} \frac{\rho_{t:T(t)-1}}{ \sum_{t \in \altmathcal{T}(s)}\rho_{t:T(t)-1}} G_t \label{eq:ord_imp_sample}.
+\end{align}
+The first-visit version of the ordinary IS estimator is unbiased with high variance (since the variance of the importance weights can be unbounded) whilst the first-visit version of the weighted IS estimator is biased but with much lower variance: the maximum weight on any of the returns is $1$. In fact, assuming bounded returns, the variance of the weighted IS estimator converges to zero even if the importance weights have infinite variance. \textbf{In practice, the weighted estimator has much lower variance and is prefered}. Additionally, note that the weighted importance sampling estimator produces a weighted average of only the returns consisent with the target policy whilst the normal importance sampling estimate does not. 
+
+\ix{First vs. Every Visit}The every-visit methods introduce bias, but the bias asymtoticallty falls to zero as the number of samples increases. These methods are prefered as they remove the need to track which states have been visited and they are easier to extend. 
+
+\begin{algorithm}[H]
+	\caption{Off-policy Every-Visit MC Prediction
+		\label{alg:off_policy_mc_prediction}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Input:} \Statex \hspace{\algorithmicindent} arbitary target policy $\pi$	
+		}
+		\Statex
+		\Require{
+			\textbf{Initialisation:} \Statex \hspace{\algorithmicindent} $Q(s, a)$ arbitarily for all $s \in \altmathcal{S}, a \in \altmathcal{A}$. \Statex \hspace{\algorithmicindent} $C(s, a) \leftarrow 0 \text{ for all }s \in \altmathcal{S}, a \in \altmathcal{A}$ 
+		} 
+		\Statex
+		\Loop: 
+		\Let{$b$}{any policy which coverage of $\pi$. }		
+		\State Generate an episode from under $b$: $\lbrace S_0, A_0, R_1, S_1, A_1, R_2, ..., S_{T-1}, A_{T-1}, R_T \rbrace$
+		\Let{$G$}{$0$}
+		\Let{$W$}{$1$}
+		\For{$t \in \lbrace T-1, T-2, ..., 0\rbrace$}:
+		\Let{$G$}{$R_{t+1} + \gamma G$} \Comment{Recusively compute $G$}
+		\Let{$C(S_t, A_t)$}{$C(S_t, A_t) + W$} 
+		\Let{$Q(S_t, A_t)$}{$Q(S_t, A_t) + \frac{W}{C(S_t, A_t)}[G - Q(S_t, A_t)]$}  
+		\Let{$W$}{$W \frac{\pi(A_t|S_t)}{b(A_t | S_t)}$}
+		\If{$W = 0$}:
+			\State \textbf{break}
+		\EndIf
+		\EndFor
+		\EndLoop
+	\end{algorithmic}
+\end{algorithm}
+
+\begin{algorithm}[H]
+	\caption{Off-policy MC Control
+		\label{alg:off_policy_mc_control}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Initialisation:} \Statex \hspace{\algorithmicindent} $Q(s, a)$ arbitarily for all $s \in \altmathcal{S}, a \in \altmathcal{A}$. \Statex \hspace{\algorithmicindent} $C(s, a) \leftarrow 0 \text{ for all }s \in \altmathcal{S}, a \in \altmathcal{A}$ 
+			\Statex \hspace{\algorithmicindent} $\pi(s) \leftarrow \arg \max_a Q(s, a)$, with ties broken \textbf{consistently}. 
+		} 
+		\Statex
+		\Loop: 
+		\Let{$b$}{any soft policy }		
+		\State Generate an episode from under $b$: $\lbrace S_0, A_0, R_1, S_1, A_1, R_2, ..., S_{T-1}, A_{T-1}, R_T \rbrace$
+		\Let{$G$}{$0$}
+		\Let{$W$}{$1$}
+		\For{$t \in \lbrace T-1, T-2, ..., 0\rbrace$}:
+		\Let{$G$}{$R_{t+1} + \gamma G$} \Comment{Recusively compute $G$}
+		\Let{$C(S_t, A_t)$}{$C(S_t, A_t) + W$} 
+		\Let{$Q(S_t, A_t)$}{$Q(S_t, A_t) + \frac{W}{C(S_t, A_t)}[G - Q(S_t, A_t)]$}  
+		\Let{$\pi(S_t)$}{$\arg \max_a Q(S_t, a)$ with ties broken consistently.}
+		\If{$A_t \neq \pi(S_t)$}:
+		\State \textbf{break}
+		\Else
+		\Let{$W$}{$\frac{W}{b(A_t | S_t)}$}
+		\EndIf
+		\EndFor
+		\EndLoop
+	\end{algorithmic}
+\end{algorithm}
+\ix{Off-Policy MC Control}Algorithm~\ref{alg:off_policy_mc_control} shows an approach to off-policy MC control using weighted importance sampling.  
+
+A problem with this algorithm is that it learns only from the tails of episodes where the remaining actions are greedy with respect to the current policy. If non-greedy actions are common, learning will be slow, especially for early actions. 
 
 
 \end{document}

@@ -406,7 +406,7 @@ Note that all returns for each state-action pair are averaged regardless of the 
 		\Let{$G$}{$R_{t+1} + \gamma G$} \Comment{Recusively compute $G$}
 		\If{$(S_t, A_t) \notin \lbrace (S_0, A_0), (S_1, A_0), \ldots (S_{t-1}, A_{t-1}) \rbrace$}:\Comment{If first visit}
 		\State \texttt{append} $G$ to $\texttt{returns}[S_t, A_t]$
-		\Let{Q($S_{t+1}, A_t$)}{\texttt{average}(\texttt{returns}[$S_t$])}
+		\Let{Q($S_{t}, A_t$)}{\texttt{average}(\texttt{returns}[$S_t, A_t$])}
 		\Let{$A^*$}{$\arg \max_{a \in \altmathcal{A}(S_t)} Q(S_t, a)$} \Comment{Break ties arbitarily}
 		\Let{$\pi(a | S_t)$}{$\begin{cases}1 - \epsilon + \epsilon / \altmathcal{A}(S_t), \quad &a = A^*  \\ \epsilon / \altmathcal{A}(S_t), &\text{otherwise} \end{cases},\quad \forall a \in \altmathcal{A}(S_t)$}
 		\EndIf
@@ -544,5 +544,95 @@ The RD error is the error in the estimate \emph{made at that time}. Note that $\
 \begin{align}
 G_t - V(S_t) = \sum_{k=t}^{T-1} \gamma^{k-t} \delta_k
 \end{align}
+
+\ix{Advantages of TD Prediction}TD methods can be implemented in an online, fully incremental fashion. This is beneficial because many tasks have very long episodes which result in MC methods learning slowly. MC methods often have to neglect returns gained from actions which are inconsisent with the policy we are attemping to evaluate, but since TD learning uses \emph{transitions}, it is much less suspectible to this problem. 
+
+Note that it can be shown that $TD(0)$, given a reducing step-size parameter satisfying the typical stochastic optimisation conditions, converges with probability one in the mean. Even though bootstrapping might not seem sound, it seems to work. Additionally, these methods often converge faster than MC methods.  
+
+\ix{Batch Updating}\emph{Batch updating} is when the update is computed across a batch of training episodes, the value function only being updated once for each batch. For small enough $\alpha$, batch $\alpha$-MC converges to the sample averages of actual returns. 
+
+\vspace{1em}
+\noindent\fbox{%
+	\parbox{\textwidth}{%
+		{\centering
+			\textbf{Temporal-Difference vs Monte Carlo Prediction} \\
+		}
+		We are faced with a \emph{prediction problem} in an unknown Markov reward process without discounting. Suppose that we observe the following episodes. 
+		\begin{align}
+			&\texttt{A}, 0, \texttt{B}, 0 \quad && \texttt{B}, 0  \quad &&& \texttt{B}, 1 \quad &&&&\texttt{B}, 1  \nonumber \\
+			&\texttt{B}, 1 \quad && \texttt{B}, 1  \quad &&& \texttt{B}, 1 \quad &&&&\texttt{B}, 1  \nonumber 
+		\end{align}
+		where, for example, the first episode indicates that we started in state \texttt{A}, transitioned to state \texttt{B} with reward $ 0 $ etc. It is clear that the value of state \texttt{B} is $0.75$, as this is the frequency that \texttt{B} returned reward $1$ before termination. What about state \texttt{A}?\\ \\
+		TD$(0)$ would estimate of $V(\texttt{A})$ as $0.75$; it would observe that every state the MRP was in state \texttt{A}, it transitioned to \texttt{B} and the value of \texttt{B} is $0.75$. This can be understood as using the MRP assumption. This does not minimise error on the training episodes, but we might expect this to be produce lower error on \emph{future error}. In fact, this prediction is the value for the \emph{maximum-likelihood model of the MRP}, also known the \emph{certainty-equivalence estimate}, as it assumes that this model is the true model.  \\\\
+		MC would instead note that every time the MRP was in state \texttt{A}, the return was $0$ and estimate $V(\texttt{A})$ as $0$. Note that this answer gives \emph{minimum squared error on the training error}. 
+	}%
+}
+
+\vspace{1em}
+The non-batch version of these algorithms can be understood to be moving in these general directions, whilst not getting fully there. Note that with state space $n= |\altmathcal{S}|$, the maximum-likelihood MRP requires up to $n^2$ memory to compute the transition probabilities, and then computing the value function requires an additional order $n^3$ steps (if done conventionally). It is striking that TD methods can approximate this solution in order $n$. 
+
+\ix{Sarsa}To solve the control problem, we must estimate action-values. Instead of considering transitions from states to states, we consider transitions from state-action pairs to state-action pairs, which again gives a Markov chain with a reward process. 
+\begin{align}
+Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha[R_{t+1}  + \gamma Q(S_{t+1}, A_{t+1}) - Q(S_t, A_t)]
+\end{align}
+
+
+\begin{algorithm}[H]
+	\caption{On-policy TD Control
+		\label{alg:on_policy_td_control}}
+	\begin{algorithmic}[1]
+		\Require{
+			\textbf{Parameters:} \Statex \hspace{\algorithmicindent} step size $\alpha \in (0, 1]$
+			\Statex \hspace{\algorithmicindent} small $\epsilon > 0$ 
+		}
+	    \Statex 
+		\Require{
+			\textbf{Initialisation:} \Statex \hspace{\algorithmicindent} $Q(s, a)$ arbitarily for all $s \in \altmathcal{S}, a \in \altmathcal{A}$ except that $Q(\texttt{terminal}, \cdot) = 0$
+		} 
+		\Statex
+		\Loop{ for each episode}: 
+		\State initialise $S$
+		\State Choose $A$ using $Q(S, \cdot)$ e.g., $\epsilon$-greedy. 
+		\Loop{ for each episode step}:
+			\State Take action $A$, observe $S', R$
+			\State Choose $A'$ using $Q(S', \cdot)$
+			\Let{$Q(S, A)$}{$Q(S, A) + \alpha [R + \gamma Q(S', A') - Q(S, A)]$}
+			\Let{$S$}{$S'$}
+			\Let{$A$}{$A'$}
+		\EndLoop
+		\EndLoop
+	\end{algorithmic}
+\end{algorithm}
+
+Algorithm~\ref{alg:on_policy_td_control} shows a control algorithm using Sarsa. As in all on-policy methods, we continually estimate $q_\pi$ for the behavioral policy $\pi$ and update $\pi$ towards greediness. This algorithm converges to the optimal policy and action-value function provided all state-action pairs are visited infinitely often and the policy converges to the greedy policy. 
+
+\ix{Q-Learning}\emph{Q-Learning} is off-policy TD Control. 
+\begin{align}
+Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha [R_{t+1} + \gamma \max_a Q(S_{t+1}, A) - Q(S_t, A_t)].
+\end{align}
+The learned action-value function directly approximates $q_*$, while the behavioural policy determines which state-action pairs are visited. As usual, we require that all state-action pairs are visited for correct convergence. 
+
+\ix{Expected Sarsa}Expected Sarsa instead uses the expected value over the successor state-action pairs:
+\begin{align}
+Q(S_t, A_t) \leftarrow Q(S_t, A_t) + \alpha [R_{t+1} + \gamma \sum_a \pi(a | S_{t+1})\ Q(S_{t+1}, a) - Q(S_t, A_t)].
+\end{align}
+This algorithm moves deterministically in the same direction as Sarsa moves in expectation. Whilst more complex than Sarsa, it reduces the variance due to the noise in the selection of $A_{t+1}$, and given the same amount of experience, it tends to perform better than Sarsa. The reduction in variance often allows larger values of $\alpha$ to be used.  
+
+Note that the Expected Sarsa algorithm subsumes Q-learning; the target policy can be different from the behavioural policy. 
+
+\ix{Maximisation Bias}The control algorithms discussed involve maximisation to construct target policies; a maximisation over expected values is used implicitly as an estimate of the maximum value, leading to significant positive bias. One way to view this problem is that this occurs because the same samples have been used for \emph{both} determining the best action \emph{and} estimating its value. 
+
+\ix{Double Learning}\emph{Double Learning} attempts to reduce maximisation bias by instead maintaining two sets of value functions; one used to estimate the value, and the other used to estimate the optimal action. At each time-step, we update one set of values only. The values updated are often chosen with a coin-toss, and the behavioural policy could for example by the $\epsilon$-greedy policy using the sum of the independent $Q$ values. 
+
+\vspace{1em}
+\noindent\fbox{%
+	\parbox{\textwidth}{%
+		{\centering
+			\textbf{Afterstates} \\
+		}
+		In certain situations, initial parts of the environment dynamics are known, but not necessarily the full dynamics. This is common in games, such as chess or tic-tac-toe. In these situations, it is often beneficial to place value functions over \emph{afterstates} i.e., the state after the known part of the dynamics function is applied. This reduces the size of the problem, as many state-action pairs have the same afterstates, and thus ought to have the same \emph{afterstate value function}. \\\\
+		Generalised policy iteration can be applied as usual in this setting. 
+	}%
+}
 
 \end{document}
